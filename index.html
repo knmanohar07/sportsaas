@@ -9,21 +9,28 @@
         .header { text-align: center; border-bottom: 3px solid #D62121; padding-bottom: 10px; margin-bottom: 20px; }
         h1 { color: #E5B85C; margin: 0; font-size: 24px; }
         .card { background-color: #1E1E1E; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; background-color: #2D2D2D; color: white; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; background-color: #2D2D2D; color: white; }
         button { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        .btn-red { background-color: #D62121; color: white; }
-        .btn-red:hover { background-color: #B01A1A; }
         .btn-gold { background-color: #E5B85C; color: black; }
-        .status { text-align: center; margin-top: 15px; font-weight: bold; color: #4CAF50; }
+        .btn-red { background-color: #D62121; color: white; }
+        .btn-small { padding: 8px; font-size: 12px; width: auto; margin: 0; background-color: #333; color: white; }
+        .btn-small:hover { background-color: #D62121; }
+        .status { text-align: center; margin-top: 15px; font-weight: bold; }
+        
+        /* New Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #333; }
+        th { color: #E5B85C; }
     </style>
 </head>
-<body>
+<body onload="loadRoster()">
 
     <div class="header">
         <h1>🏏 RCB Academy Dashboard</h1>
         <p style="color: #ccc; font-size: 14px;">Mobile Payment & Roster Management</p>
     </div>
 
+    <!-- Section 1: Add a Player -->
     <div class="card">
         <h3 style="margin-top: 0;">Add New Player</h3>
         <input type="text" id="playerName" placeholder="Player Name (e.g., Virat Kohli)">
@@ -35,14 +42,75 @@
         <p id="playerStatus" class="status"></p>
     </div>
 
+    <!-- NEW SECTION: Live Roster -->
+    <div class="card">
+        <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
+            Current Roster
+            <button class="btn-small" style="background-color: #4CAF50;" onclick="loadRoster()">🔄 Refresh</button>
+        </h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="rosterTableBody">
+                    <tr><td colspan="3" style="text-align: center; color: #aaa;">Loading players...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 3: Trigger Automation -->
     <div class="card" style="border-left: 4px solid #D62121;">
         <h3 style="margin-top: 0;">Automated Billing</h3>
-        <p style="font-size: 13px; color: #aaa;">Scan database and send WhatsApp alerts to all overdue accounts.</p>
         <button class="btn-red" onclick="triggerReminders()">🚀 Send WhatsApp Reminders</button>
         <p id="reminderStatus" class="status"></p>
     </div>
 
     <script>
+        async function loadRoster() {
+            const tableBody = document.getElementById("rosterTableBody");
+            try {
+                const response = await fetch("/players");
+                const players = await response.json();
+                
+                tableBody.innerHTML = ""; // Clear loading text
+                
+                if (players.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #aaa;">No players found. Add one above!</td></tr>`;
+                    return;
+                }
+
+                players.forEach(player => {
+                    const row = `<tr>
+                        <td>${player.id}</td>
+                        <td><strong>${player.name}</strong><br><span style="font-size:11px; color:#aaa;">${player.emergency_contact}</span></td>
+                        <td><button class="btn-small" onclick="addOverdueBill(${player.id})">+ ₹500 Bill</button></td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #D62121;">Error loading roster.</td></tr>`;
+            }
+        }
+
+        async function addOverdueBill(playerId) {
+            const response = await fetch("/payments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ player_id: playerId, amount: 500, status: "Overdue" })
+            });
+            if(response.ok) {
+                alert(`✅ ₹500 Overdue Bill added to Player ID: ${playerId}! They will now receive a WhatsApp reminder when you click the red button.`);
+            } else {
+                alert("❌ Failed to add bill. Check backend.");
+            }
+        }
+
         async function addPlayer() {
             const name = document.getElementById("playerName").value;
             const age = document.getElementById("playerAge").value;
@@ -51,28 +119,17 @@
             
             if(!name || !age || !phone) return alert("Please fill in Name, Age, and Phone Number!");
 
-            // Sending exactly what the backend schema expects
             const response = await fetch("/players", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    name: name, 
-                    age: parseInt(age), 
-                    emergency_contact: phone, 
-                    medical_info: medical 
-                })
+                body: JSON.stringify({ name: name, age: parseInt(age), emergency_contact: phone, medical_info: medical })
             });
 
             if(response.ok) {
                 document.getElementById("playerStatus").style.color = "#4CAF50";
                 document.getElementById("playerStatus").innerText = "✅ Player Added Successfully!";
-                document.getElementById("playerName").value = "";
-                document.getElementById("playerAge").value = "";
-                document.getElementById("playerPhone").value = "";
                 setTimeout(() => document.getElementById("playerStatus").innerText = "", 3000);
-            } else {
-                document.getElementById("playerStatus").style.color = "#D62121";
-                document.getElementById("playerStatus").innerText = "❌ Error adding player. Check console.";
+                loadRoster(); // Instantly refresh the table!
             }
         }
 
@@ -85,9 +142,6 @@
                 const data = await response.json();
                 document.getElementById("reminderStatus").style.color = "#4CAF50";
                 document.getElementById("reminderStatus").innerText = `✅ Success! ${data.messages_queued} reminders sent.`;
-            } else {
-                document.getElementById("reminderStatus").style.color = "#D62121";
-                document.getElementById("reminderStatus").innerText = "❌ Error sending messages.";
             }
         }
     </script>
