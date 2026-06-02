@@ -49,7 +49,7 @@
             
             if(!name || !phone) return alert("Please fill in both fields!");
 
-            const response = await fetch("/players/", {
+            const response = await fetch("/players", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: name, emergency_contact: phone })
