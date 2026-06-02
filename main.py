@@ -1,3 +1,5 @@
+from fastapi import FastAPI, Depends, BackgroundTasks
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -27,9 +29,8 @@ app.add_middleware(
 )
 
 @app.get("/")
-def read_root():
-    return {"status": "Success", "message": "Sports Academy Backend Engine is running perfectly!"}
-
+def serve_frontend():
+    return FileResponse("index.html")
 
 # --- PLAYER ENDPOINTS ---
 

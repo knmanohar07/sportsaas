@@ -3,142 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Academy Command Center</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>RCB Academy Manager</title>
     <style>
-        /* Custom scrollbar for a cleaner look */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: white; margin: 0; padding: 20px; }
+        .header { text-align: center; border-bottom: 3px solid #D62121; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #E5B85C; margin: 0; font-size: 24px; }
+        .card { background-color: #1E1E1E; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: none; box-sizing: border-box; background-color: #2D2D2D; color: white; }
+        button { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-red { background-color: #D62121; color: white; }
+        .btn-red:hover { background-color: #B01A1A; }
+        .btn-gold { background-color: #E5B85C; color: black; }
+        .status { text-align: center; margin-top: 15px; font-weight: bold; color: #4CAF50; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans text-gray-800">
+<body>
 
-    <nav class="bg-red-700 text-white shadow-lg border-b-4 border-yellow-500">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold tracking-wider">ACADEMY COMMAND CENTER</h1>
-            <span class="bg-yellow-500 text-red-900 px-3 py-1 rounded-full text-sm font-bold shadow" id="connection-status">
-                Connecting...
-            </span>
-        </div>
-    </nav>
+    <div class="header">
+        <h1>🏏 RCB Academy Dashboard</h1>
+        <p style="color: #ccc; font-size: 14px;">Mobile Payment & Roster Management</p>
+    </div>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
-        
-        <h2 class="text-xl font-bold mb-4 text-gray-700 border-b-2 border-red-700 pb-2">Financial Health</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
-                <p class="text-sm text-gray-500 uppercase font-bold">Projected Revenue</p>
-                <p class="text-3xl font-black mt-2 text-gray-800">₹<span id="proj-rev">0</span></p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                <p class="text-sm text-gray-500 uppercase font-bold">Collected</p>
-                <p class="text-3xl font-black mt-2 text-green-600">₹<span id="coll-rev">0</span></p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
-                <p class="text-sm text-gray-500 uppercase font-bold">Outstanding</p>
-                <p class="text-3xl font-black mt-2 text-red-600">₹<span id="out-rev">0</span></p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
-                <p class="text-sm text-gray-500 uppercase font-bold">Collection Rate</p>
-                <p class="text-3xl font-black mt-2 text-gray-800"><span id="coll-rate">0</span>%</p>
-            </div>
-        </div>
+    <!-- Section 1: Add a Player -->
+    <div class="card">
+        <h3 style="margin-top: 0;">Add New Player</h3>
+        <input type="text" id="playerName" placeholder="Player Name (e.g., Virat Kohli)">
+        <input type="tel" id="playerPhone" placeholder="10-Digit WhatsApp Number">
+        <button class="btn-gold" onclick="addPlayer()">Register Player</button>
+        <p id="playerStatus" class="status"></p>
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            <div class="bg-white rounded-lg shadow p-6 border-t-4 border-red-700">
-                <h2 class="text-xl font-bold mb-4 text-gray-800">Turf Utilization</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
-                                <th class="py-3 px-4">Turf Name</th>
-                                <th class="py-3 px-4">Capacity</th>
-                                <th class="py-3 px-4">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="turf-body" class="divide-y divide-gray-200">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow p-6 border-t-4 border-red-700">
-                <h2 class="text-xl font-bold mb-4 text-gray-800">Active Player Roster</h2>
-                <ul id="player-list" class="divide-y divide-gray-200 h-64 overflow-y-auto pr-2">
-                    </ul>
-            </div>
-        </div>
-    </main>
+    <!-- Section 2: Trigger Automation -->
+    <div class="card" style="border-left: 4px solid #D62121;">
+        <h3 style="margin-top: 0;">Automated Billing</h3>
+        <p style="font-size: 13px; color: #aaa;">Scan database and send WhatsApp alerts to all overdue accounts.</p>
+        <button class="btn-red" onclick="triggerReminders()">🚀 Send WhatsApp Reminders</button>
+        <p id="reminderStatus" class="status"></p>
+    </div>
 
     <script>
-        const API_BASE = "http://127.0.0.1:8000";
+        // This JavaScript talks to your FastAPI cloud server invisibly!
+        async function addPlayer() {
+            const name = document.getElementById("playerName").value;
+            const phone = document.getElementById("playerPhone").value;
+            
+            if(!name || !phone) return alert("Please fill in both fields!");
 
-        async function loadDashboard() {
-            try {
-                // Fetch Analytics
-                const analyticsRes = await fetch(`${API_BASE}/analytics/dashboard/`);
-                if (!analyticsRes.ok) throw new Error("Backend offline");
-                const analytics = await analyticsRes.json();
-                
-                // Update Connection Status
-                const statusBadge = document.getElementById("connection-status");
-                statusBadge.textContent = "Live \u25CF"; // Adds a dot
-                statusBadge.classList.replace("bg-yellow-500", "bg-green-500");
-                statusBadge.classList.replace("text-red-900", "text-white");
+            const response = await fetch("/players/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: name, emergency_contact: phone })
+            });
 
-                // Update Financial KPIs
-                document.getElementById("proj-rev").innerText = analytics.financial_health.total_projected_revenue;
-                document.getElementById("coll-rev").innerText = analytics.financial_health.total_collected_revenue;
-                document.getElementById("out-rev").innerText = analytics.financial_health.outstanding_fees;
-                document.getElementById("coll-rate").innerText = analytics.financial_health.collection_rate_percentage;
-
-                // Update Turf Table
-                const turfBody = document.getElementById("turf-body");
-                turfBody.innerHTML = ""; 
-                analytics.turf_utilization.forEach(turf => {
-                    let statusColor = turf.status === "Optimal" ? "text-green-600 bg-green-100" : 
-                                      turf.status === "Crowded" ? "text-red-600 bg-red-100" : "text-yellow-600 bg-yellow-100";
-                    
-                    turfBody.innerHTML += `
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-4 font-semibold">${turf.turf_name}</td>
-                            <td class="py-3 px-4">${turf.utilization_rate}% (${turf.attended_players}/${turf.capacity})</td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">${turf.status}</span>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                // Fetch Players
-                const playerRes = await fetch(`${API_BASE}/players/`);
-                const players = await playerRes.json();
-                
-                const playerList = document.getElementById("player-list");
-                playerList.innerHTML = "";
-                players.forEach(player => {
-                    playerList.innerHTML += `
-                        <li class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded transition">
-                            <div>
-                                <p class="font-bold text-gray-800">${player.name}</p>
-                                <p class="text-xs text-gray-500">Emergency: ${player.emergency_contact}</p>
-                            </div>
-                            <span class="text-sm font-bold text-gray-400">ID: #${player.id}</span>
-                        </li>
-                    `;
-                });
-
-            } catch (error) {
-                console.error("Error connecting to backend:", error);
-                document.getElementById("connection-status").textContent = "Offline \u2716";
-                document.getElementById("connection-status").classList.replace("bg-yellow-500", "bg-red-600");
-                document.getElementById("connection-status").classList.replace("text-red-900", "text-white");
+            if(response.ok) {
+                document.getElementById("playerStatus").innerText = "✅ Player Added Successfully!";
+                setTimeout(() => document.getElementById("playerStatus").innerText = "", 3000);
             }
         }
 
-        // Run when the page loads
-        window.onload = loadDashboard;
+        async function triggerReminders() {
+            document.getElementById("reminderStatus").innerText = "⏳ Sending to Twilio...";
+            const response = await fetch("/payments/reminders/trigger", { method: "POST" });
+            
+            if(response.ok) {
+                const data = await response.json();
+                document.getElementById("reminderStatus").innerText = `✅ Success! ${data.messages_queued} reminders sent.`;
+            } else {
+                document.getElementById("reminderStatus").innerText = "❌ Error sending messages.";
+            }
+        }
     </script>
 </body>
 </html>
