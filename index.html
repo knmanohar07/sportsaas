@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academy Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <nav class="bg-red-700 text-white shadow-lg border-b-4 border-yellow-500">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wider">ACADEMY COMMAND CENTER</h1>
+            <span class="bg-yellow-500 text-red-900 px-3 py-1 rounded-full text-sm font-bold shadow" id="connection-status">
+                Connecting...
+            </span>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        
+        <h2 class="text-xl font-bold mb-4 text-gray-700 border-b-2 border-red-700 pb-2">Financial Health</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+                <p class="text-sm text-gray-500 uppercase font-bold">Projected Revenue</p>
+                <p class="text-3xl font-black mt-2 text-gray-800">₹<span id="proj-rev">0</span></p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                <p class="text-sm text-gray-500 uppercase font-bold">Collected</p>
+                <p class="text-3xl font-black mt-2 text-green-600">₹<span id="coll-rev">0</span></p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
+                <p class="text-sm text-gray-500 uppercase font-bold">Outstanding</p>
+                <p class="text-3xl font-black mt-2 text-red-600">₹<span id="out-rev">0</span></p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
+                <p class="text-sm text-gray-500 uppercase font-bold">Collection Rate</p>
+                <p class="text-3xl font-black mt-2 text-gray-800"><span id="coll-rate">0</span>%</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <div class="bg-white rounded-lg shadow p-6 border-t-4 border-red-700">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">Turf Utilization</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
+                                <th class="py-3 px-4">Turf Name</th>
+                                <th class="py-3 px-4">Capacity</th>
+                                <th class="py-3 px-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="turf-body" class="divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6 border-t-4 border-red-700">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">Active Player Roster</h2>
+                <ul id="player-list" class="divide-y divide-gray-200 h-64 overflow-y-auto pr-2">
+                    </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000";
+
+        async function loadDashboard() {
+            try {
+                // Fetch Analytics
+                const analyticsRes = await fetch(`${API_BASE}/analytics/dashboard/`);
+                if (!analyticsRes.ok) throw new Error("Backend offline");
+                const analytics = await analyticsRes.json();
+                
+                // Update Connection Status
+                const statusBadge = document.getElementById("connection-status");
+                statusBadge.textContent = "Live \u25CF"; // Adds a dot
+                statusBadge.classList.replace("bg-yellow-500", "bg-green-500");
+                statusBadge.classList.replace("text-red-900", "text-white");
+
+                // Update Financial KPIs
+                document.getElementById("proj-rev").innerText = analytics.financial_health.total_projected_revenue;
+                document.getElementById("coll-rev").innerText = analytics.financial_health.total_collected_revenue;
+                document.getElementById("out-rev").innerText = analytics.financial_health.outstanding_fees;
+                document.getElementById("coll-rate").innerText = analytics.financial_health.collection_rate_percentage;
+
+                // Update Turf Table
+                const turfBody = document.getElementById("turf-body");
+                turfBody.innerHTML = ""; 
+                analytics.turf_utilization.forEach(turf => {
+                    let statusColor = turf.status === "Optimal" ? "text-green-600 bg-green-100" : 
+                                      turf.status === "Crowded" ? "text-red-600 bg-red-100" : "text-yellow-600 bg-yellow-100";
+                    
+                    turfBody.innerHTML += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-3 px-4 font-semibold">${turf.turf_name}</td>
+                            <td class="py-3 px-4">${turf.utilization_rate}% (${turf.attended_players}/${turf.capacity})</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">${turf.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                // Fetch Players
+                const playerRes = await fetch(`${API_BASE}/players/`);
+                const players = await playerRes.json();
+                
+                const playerList = document.getElementById("player-list");
+                playerList.innerHTML = "";
+                players.forEach(player => {
+                    playerList.innerHTML += `
+                        <li class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded transition">
+                            <div>
+                                <p class="font-bold text-gray-800">${player.name}</p>
+                                <p class="text-xs text-gray-500">Emergency: ${player.emergency_contact}</p>
+                            </div>
+                            <span class="text-sm font-bold text-gray-400">ID: #${player.id}</span>
+                        </li>
+                    `;
+                });
+
+            } catch (error) {
+                console.error("Error connecting to backend:", error);
+                document.getElementById("connection-status").textContent = "Offline \u2716";
+                document.getElementById("connection-status").classList.replace("bg-yellow-500", "bg-red-600");
+                document.getElementById("connection-status").classList.replace("text-red-900", "text-white");
+            }
+        }
+
+        // Run when the page loads
+        window.onload = loadDashboard;
+    </script>
+</body>
+</html>
