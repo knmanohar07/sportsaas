@@ -13,6 +13,56 @@ from fastapi.responses import StreamingResponse
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 import time
 from twilio.rest import Client
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+
+# --- SECURITY SETTINGS ---
+SECRET_KEY = "super-secret-rcb-key-change-this-later"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+# Hardcoded Admin User (For MVP testing)
+FAKE_DB = {
+    "coach": {
+        "username": "coach",
+        "password_hash": pwd_context.hash("rcb2026") # Password is 'rcb2026'
+    }
+}
+
+# --- THE BOUNCER (Dependency) ---
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        return username
+    except JWTError:
+        raise credentials_exception
+
+# --- LOGIN ROUTE ---
+@app.post("/login")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user_dict = FAKE_DB.get(form_data.username)
+    if not user_dict or not pwd_context.verify(form_data.password, user_dict["password_hash"]):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    
+    # Create the VIP Wristband (JWT Token)
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    token = jwt.encode({"sub": user_dict["username"], "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return {"access_token": token, "token_type": "bearer"}
 
 # Create database tables automatically
 models.Base.metadata.create_all(bind=engine)
@@ -55,6 +105,15 @@ def get_all_players(db: Session = Depends(get_db)):
 @app.get("/players/{player_id}/qrcode")
 def get_player_qr_code(player_id: int, db: Session = Depends(get_db)):
     """Generates a dynamic, scannable QR code for player attendance"""
+    @app.get("/players")
+def read_players(current_user: str = Depends(get_current_user)):
+    # Your existing code stays exactly the same here
+    pass
+
+@app.post("/payments")
+def create_payment(payment: PaymentCreate, current_user: str = Depends(get_current_user)):
+    # Your existing code stays exactly the same here
+    pass
     # 1. Verify the player exists
     player = db.query(models.Player).filter(models.Player.id == player_id).first()
     if not player:
