@@ -99,11 +99,21 @@
         }
 
         async function addOverdueBill(playerId) {
+            // Generate a valid ISO timestamp for today
+            const todayISO = new Date().toISOString();
+
             const response = await fetch("/payments", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ player_id: playerId, amount: 500, status: "Overdue" })
+                body: JSON.stringify({ 
+                    player_id: playerId, 
+                    amount_due: 500, 
+                    amount_paid: 0,
+                    due_date: todayISO,
+                    status: "Overdue" 
+                })
             });
+            
             if(response.ok) {
                 alert(`✅ ₹500 Overdue Bill added to Player ID: ${playerId}! They will now receive a WhatsApp reminder when you click the red button.`);
             } else {
@@ -142,6 +152,9 @@
                 const data = await response.json();
                 document.getElementById("reminderStatus").style.color = "#4CAF50";
                 document.getElementById("reminderStatus").innerText = `✅ Success! ${data.messages_queued} reminders sent.`;
+            } else {
+                document.getElementById("reminderStatus").style.color = "#D62121";
+                document.getElementById("reminderStatus").innerText = "❌ Error sending messages.";
             }
         }
     </script>
