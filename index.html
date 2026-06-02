@@ -24,16 +24,17 @@
         <p style="color: #ccc; font-size: 14px;">Mobile Payment & Roster Management</p>
     </div>
 
-    <!-- Section 1: Add a Player -->
     <div class="card">
         <h3 style="margin-top: 0;">Add New Player</h3>
         <input type="text" id="playerName" placeholder="Player Name (e.g., Virat Kohli)">
+        <input type="number" id="playerAge" placeholder="Player Age">
         <input type="tel" id="playerPhone" placeholder="10-Digit WhatsApp Number">
+        <input type="text" id="playerMedical" placeholder="Medical Info (or 'None')" value="None">
+        
         <button class="btn-gold" onclick="addPlayer()">Register Player</button>
         <p id="playerStatus" class="status"></p>
     </div>
 
-    <!-- Section 2: Trigger Automation -->
     <div class="card" style="border-left: 4px solid #D62121;">
         <h3 style="margin-top: 0;">Automated Billing</h3>
         <p style="font-size: 13px; color: #aaa;">Scan database and send WhatsApp alerts to all overdue accounts.</p>
@@ -42,33 +43,50 @@
     </div>
 
     <script>
-        // This JavaScript talks to your FastAPI cloud server invisibly!
         async function addPlayer() {
             const name = document.getElementById("playerName").value;
+            const age = document.getElementById("playerAge").value;
             const phone = document.getElementById("playerPhone").value;
+            const medical = document.getElementById("playerMedical").value;
             
-            if(!name || !phone) return alert("Please fill in both fields!");
+            if(!name || !age || !phone) return alert("Please fill in Name, Age, and Phone Number!");
 
+            // Sending exactly what the backend schema expects
             const response = await fetch("/players", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: name, emergency_contact: phone })
+                body: JSON.stringify({ 
+                    name: name, 
+                    age: parseInt(age), 
+                    emergency_contact: phone, 
+                    medical_info: medical 
+                })
             });
 
             if(response.ok) {
+                document.getElementById("playerStatus").style.color = "#4CAF50";
                 document.getElementById("playerStatus").innerText = "✅ Player Added Successfully!";
+                document.getElementById("playerName").value = "";
+                document.getElementById("playerAge").value = "";
+                document.getElementById("playerPhone").value = "";
                 setTimeout(() => document.getElementById("playerStatus").innerText = "", 3000);
+            } else {
+                document.getElementById("playerStatus").style.color = "#D62121";
+                document.getElementById("playerStatus").innerText = "❌ Error adding player. Check console.";
             }
         }
 
         async function triggerReminders() {
+            document.getElementById("reminderStatus").style.color = "#E5B85C";
             document.getElementById("reminderStatus").innerText = "⏳ Sending to Twilio...";
             const response = await fetch("/payments/reminders/trigger", { method: "POST" });
             
             if(response.ok) {
                 const data = await response.json();
+                document.getElementById("reminderStatus").style.color = "#4CAF50";
                 document.getElementById("reminderStatus").innerText = `✅ Success! ${data.messages_queued} reminders sent.`;
             } else {
+                document.getElementById("reminderStatus").style.color = "#D62121";
                 document.getElementById("reminderStatus").innerText = "❌ Error sending messages.";
             }
         }
